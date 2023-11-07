@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_f7192b0e_85e1_4ca3_a170_9542bcf38ebd_Output_Variables_lastName = Number
+

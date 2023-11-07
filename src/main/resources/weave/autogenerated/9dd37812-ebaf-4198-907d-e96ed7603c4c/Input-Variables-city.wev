@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_9dd37812_ebaf_4198_907d_e96ed7603c4c_Input_Variables_city = Number
+
