@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<validation:config name="Validation_Config" doc:name="Validation Config" doc:id="f4e1c847-878a-47f0-83c4-6130da3578e8" />
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="1399923a-7838-489d-a45f-33c939304539" >
+		<http:request-connection host="localhost" port="8082" />
+	</http:request-config>
+	<flow name="create-user" doc:id="8af9fd76-c19f-406b-bc2b-e62e6d27d9c4" >
+		<set-variable value="#[payload.emailAdresse]" doc:name="email" doc:id="a6f6226d-a27d-43b0-a45d-bd29d89d7914" variableName="email"/>
+		<set-variable value="#[payload.vorname]" doc:name="firstName" doc:id="36d2df79-51b6-4b66-b12d-f6ffdccb8a38" variableName="firstName"/>
+		<set-variable value="#[payload.nachname]" doc:name="lastName" doc:id="794e13e3-7a17-42cb-b864-5aa08823312b" variableName="lastName"/>
+		<set-variable value='#[payload."straße"]' doc:name="street" doc:id="cfda590c-949d-4e90-ab60-6bfa990ad631" variableName="street" />
+		<set-variable value="#[payload.Geburtsort]" doc:name="city" doc:id="13e961c3-2fc6-496a-ac5b-fbef8524d535" variableName="city"/>
+		<set-variable value="#[payload.Geburtstag]" doc:name="dob" doc:id="9b4faeba-8970-4d58-b66b-087c63f9c373" variableName="dob"/>
+		<validation:is-email doc:name="Is email" doc:id="12bbe987-7d4f-49e0-940f-6e56d87ff471" config-ref="Validation_Config" email='#["mule@mulesoft.com"]' />
+		<choice doc:name="Select the User or Error" doc:id="c5ec3b9f-ab1b-47e4-8ef2-5ee1a9e4cb24" >
+			<when expression="#[payload != []]">
+				<http:request method="GET" doc:name="Request" doc:id="523cc0d4-4ec0-47e0-abfd-4f8277fbf81f" />
+				<db:select doc:name="Select Manager ID" doc:id="b40b3756-7659-4321-accd-18d79ea86c05" config-ref="Database_Config_User">
+					<db:sql ><![CDATA[Select manager_id from user where email= :email;]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+email : vars.email
+}]]]></db:input-parameters>
+				</db:select>
+				<choice doc:name="Choice" doc:id="d18d0b7e-6acf-440f-a077-85022225977e">
+					<when expression="#[payload != []]">
+						<db:update doc:name="Update User" doc:id="2a66382c-0e3f-464e-9257-26b873acdc80" config-ref="Database_Config_User">
+							<db:sql><![CDATA[UPDATE user
+        SET
+            email = :email,
+            firstName = :firstName,
+            lastName = :lastName,
+            manager_id = :manager_id,
+            street = :street,
+            city = :city,
+            dob = :dob,
+            updated_at = NOW()
+        WHERE
+            email = :email;]]></db:sql>
+							<db:input-parameters><![CDATA[#[{
+	     email: vars.email,
+        firstName: vars.firstName,
+        lastName: vars.lastName,
+        manager_id: payload.manager_id,
+        street: vars.street,
+        city: payload.city,
+        dob: payload.dob,
+}]]]></db:input-parameters>
+						</db:update>
+						<ee:transform doc:name="Transform Message" doc:id="7244cd65-38d7-4fa6-968d-c40a1886119f">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message" : "User was updated"
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+					</when>
+					<otherwise>
+						<db:insert doc:name="Insert User" doc:id="059e2a4e-efd6-4466-a27c-48d7f55bac3b" config-ref="Database_Config_User">
+							<db:sql><![CDATA[INSERT INTO user (email, firstName, lastName, manager_id street, city, dob, updated_at)
+VALUES (:email, :firstName, :lastName, :street, :city, :dob, NOW());]]></db:sql>
+							<db:input-parameters><![CDATA[#[{
+  email: vars.email,
+  firstName: vars.firstName,
+  lastName: vars.lastName,
+  manager_id: vars.manager_id,
+  street: vars.street,
+  city: vars.city,
+  dob: vars.dob,
+  updated_at: payload.updated_at
+}]]]></db:input-parameters>
+						</db:insert>
+						<ee:transform doc:name="Transform Message" doc:id="99176227-ba5d-4977-9de8-9ddc2fc650f5">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "User was created"
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+					</otherwise>
+				</choice>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="e6309fc4-bdc0-4333-9d2b-0e85fb4ccb7f" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"message":"User not found"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="select-manager_id-Flow" doc:id="a39427c7-0798-4b80-be72-ecea751f3e77" >
+		<http:listener doc:name="Listener" doc:id="7c1454a0-7796-465d-a7fa-8b45554882b1" config-ref="papi-users-httpListenerConfig" path="/test"/>
+		<db:select doc:name="Select Manager ID" doc:id="a78f4680-75a4-44d4-9f3f-ed9875d32b51" config-ref="Database_Config_User">
+			<db:sql><![CDATA[Select manager_id from user where email= :email;]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+email : vars.email
+}]]]></db:input-parameters>
+		</db:select>
+	</flow>
+</mule>
