@@ -195,7 +195,7 @@
 		<dependency>
 			<groupId>115c39c2-b285-45ab-a930-0148acd0cf51</groupId>
 			<artifactId>papi-users</artifactId>
-			<version>1.0.1</version>
+			<version>1.0.5</version>
 			<classifier>raml</classifier>
 			<type>zip</type>
 		</dependency>

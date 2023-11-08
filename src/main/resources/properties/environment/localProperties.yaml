@@ -6,8 +6,8 @@ environment:
     level: 'DEBUG'
 
 http:
-  port: '8081'
-  port2: '8082'
+  port: '8082'
+  
   
 db_config:
   host: 'localhost'
