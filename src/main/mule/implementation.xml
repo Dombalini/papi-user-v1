@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<!-- [STUDIO:"Create or Update User"]<?xml version="1.0" encoding="UTF-8"?> [STUDIO] -->
 
 <mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
 	xmlns:db="http://www.mulesoft.org/schema/mule/db"
@@ -15,8 +15,8 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 	<flow name="create-user" doc:id="8af9fd76-c19f-406b-bc2b-e62e6d27d9c4" >
 		<logger level="INFO" doc:name="Start Log" doc:id="f68fe589-d4a5-472f-8cf9-42d25165bae0" message="The create-user-flow has started"/>
 		<flow-ref doc:name="variables-SubFlow" doc:id="5ca684c0-2ea3-4068-8ff6-59ed25e28346" name="variables-SubFlow"/>
-		<http:request method="GET" doc:name="Request Users by manager_id" doc:id="b3b50b5c-575d-48a4-93cd-a3e40122f22e" config-ref="HTTP_Request_configuration" path="/users">
-			<http:headers ><![CDATA[#[output application/java
+		<http:request method="GET" doc:name="Request Users " doc:id="b3b50b5c-575d-48a4-93cd-a3e40122f22e" config-ref="HTTP_Request_configuration" path="/api/users">
+			<http:headers><![CDATA[#[output application/java
 ---
 {
 	"client_secret" : "abcd",
@@ -25,47 +25,53 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 			<http:query-params ><![CDATA[#[output application/java
 ---
 {
-	"manager_id" : "1"
+	"email" : vars.user.email
 }]]]></http:query-params>
 		</http:request>
-		<choice doc:name="Create or Update User" doc:id="2a29377f-7606-478b-9093-368c98c2c252" >
-			<when expression="#[payload != []]" >
-				<flow-ref doc:name="update-SubFlow" doc:id="12f9de9d-1c8a-4d43-b711-679dcb97c315" name="update-SubFlow" />
+		<set-variable value="#[payload.email]" doc:name="email" doc:id="7a773442-c0fd-4a3d-b983-2ae5748d37eb" variableName="email"/>
+		<choice doc:name="Choice" doc:id="1a4b239e-37c5-4744-8a27-a45b91f2ef54" >
+			<when expression="#[output application/json&#10;---&#10;vars.email contains vars.User.email]">
+				<flow-ref doc:name="update-SubFlow" doc:id="107a7e1f-e8a5-4624-89bc-0c5865917713" name="update-SubFlow" />
 			</when>
 			<otherwise >
-				<flow-ref doc:name="create-subFlow" doc:id="e1f44f05-198d-44bc-afc5-f517f58de2f7" name="create-subFlow" />
+				<flow-ref doc:name="create-subFlow" doc:id="bd581d72-7b05-48af-b713-4857bd77f2ff" name="create-subFlow" />
 			</otherwise>
 		</choice>
 	</flow>
 	<sub-flow name="update-SubFlow" doc:id="f7192b0e-85e1-4ca3-a170-9542bcf38ebd" >
-		<ee:transform doc:name="request Payload" doc:id="3c8aba03-1108-406b-a7a0-caf9601e4b28" >
+<!-- [STUDIO:"request Payload"]		<ee:transform doc:name="request Payload" doc:id="3c8aba03-1108-406b-a7a0-caf9601e4b28" >
 			<ee:message >
-				<ee:set-payload ><![CDATA[output application/java
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+&#45;&#45;-
+{
+	email: vars.User.email,
+	firstName: vars.User.firstName,
+	lastName: vars.User.lastName,
+	manager_id: payload.manager_id ,
+	city: vars.User.city,
+	street: vars.User.street,
+	dob: vars.User.dob
+}
+
+&#93;&#93;></ee:set-payload>
+			</ee:message>
+		</ee:transform> [STUDIO] -->
+		<http:request method="PUT" doc:name="Request " doc:id="e7c89b13-4ba6-4fff-a4c2-6fb0f50e3fbc" config-ref="HTTP_Request_configuration" path="/api/users/{id}">
+			<http:body ><![CDATA[#[output application/json
 ---
 {
-	email: vars.email,
-	firstName: vars.firstName,
-	lastName: vars.lastName,
-	manager_id: payload.manager_id[0] as String ,
-	city: vars.city as String,
-	street: vars.street as String,
-	dob: vars.dob,
-}]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
-		<http:request method="PUT" doc:name="Request " doc:id="e7c89b13-4ba6-4fff-a4c2-6fb0f50e3fbc" config-ref="HTTP_Request_configuration" path="/users/{clientId}">
-			<http:body ><![CDATA[#[{
-"email": "bared@hooli.com",
-"firstName": "Jared",
-"lastName": "Mun",
-"manager_id": 100,
-"address": {
-"street": "Hacker Mostel",
-"city": "Palo Blto"
-},
-"dob": "1982-09-25",
-"updated_at": "2023-10-10T21:30:00.000Z",
-"initials": "JD"
+	"email" : vars.user.email,
+	"firstName": vars.user.firstName,
+	"lastName": vars.user.lastName,
+	"manager_id": 1,
+	"address": {
+		"street": vars.user.street,
+		"city": vars.user.city
+	},
+	"dob": vars.user.dob,
+	"updated_at": "2023-10-10T21:30:00.000Z",
+	"initials": "JD"
 }]]]></http:body>
 			<http:headers ><![CDATA[#[output application/java
 ---
@@ -76,7 +82,7 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 			<http:uri-params ><![CDATA[#[output application/java
 ---
 {
-	"id" : attributes.uriParams."Id"
+	"id" : payload.id[0]
 }]]]></http:uri-params>
 		</http:request>
 		<ee:transform doc:name="Transform Message" doc:id="d5b73dd1-27c8-4661-8989-ac04da8cd097" >
@@ -91,20 +97,40 @@ output application/json
 		</ee:transform>
 	</sub-flow>
 	<sub-flow name="create-subFlow" doc:id="9dd37812-ebaf-4198-907d-e96ed7603c4c" >
-		<ee:transform doc:name="request Payload" doc:id="a2896bc1-0e02-4692-8f97-6441ed57bacf">
+<!-- [STUDIO:"request Payload"]		<ee:transform doc:name="request Payload" doc:id="a2896bc1-0e02-4692-8f97-6441ed57bacf">
 			<ee:message>
-				<ee:set-payload><![CDATA[{
-	email: vars.email,
-	firstName: vars.firstName,
-	lastName: vars.lastName,
-	manager_id: payload.manager_id[0] as String ,
-	city: vars.city as String,
-	street: vars.street as String,
-	dob: vars.dob,
-}]]></ee:set-payload>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+&#45;&#45;-
+{
+	email: vars.User.email,
+	firstName: vars.User.firstName,
+	lastName: vars.User.lastName,
+	manager_id: payload.manager_id[0&#93; as String ,
+	city: vars.User.city,
+	street: vars.User.street,
+	dob: vars.User.dob
+}
+
+&#93;&#93;></ee:set-payload>
 			</ee:message>
-		</ee:transform>
+		</ee:transform> [STUDIO] -->
 		<http:request method="POST" doc:name="Request" doc:id="20f38065-6a09-49c0-9d3f-2edde4d7f916" config-ref="HTTP_Request_configuration" path="/api/users">
+			<http:body ><![CDATA[#[output application/json
+---
+{
+	"email" : vars.user.email,
+	"firstName": vars.user.firstName,
+	"lastName": vars.user.lastName,
+	"manager_id": 1,
+	"address": {
+		"street": vars.user.street,
+		"city": vars.user.city
+	},
+	"dob": vars.user.dob,
+	"updated_at": "2023-10-10T21:30:00.000Z",
+	"initials": "JD"
+}]]]></http:body>
 			<http:headers ><![CDATA[#[output application/java
 ---
 {
@@ -124,11 +150,22 @@ output application/json
 		</ee:transform>
 	</sub-flow>
 	<sub-flow name="variables-SubFlow" doc:id="37de6f48-40ec-4417-af24-18837369a11e" >
-		<set-variable value="#[payload.emailAdresse]" doc:name="set vars.User" doc:id="8a39691b-f7d8-4ebd-99ec-7c4236847db3" variableName="User" />
-		<set-variable value="#[payload.vorname]" doc:name="firstName" doc:id="5f6e1ef5-3ea2-4a54-b5ba-7188fe7d7bd3" variableName="firstName" />
-		<set-variable value="#[payload.nachname]" doc:name="lastName" doc:id="5f7cd8e8-75c7-4cfb-a421-ee8f1c35db85" variableName="lastName" />
-		<set-variable value='#[payload."straße"]' doc:name="street" doc:id="9186817d-4e95-413c-ae0b-160a4322a8a4" variableName="street" />
-		<set-variable value="#[payload.Geburtsort]" doc:name="city" doc:id="64b9c8a7-f1ba-4d67-81a6-0665bcb97e35" variableName="city" />
-		<set-variable value="#[payload.Geburtstag]" doc:name="dob" doc:id="6b9479ae-3000-4c7d-94b6-27624ec31190" variableName="dob" />
+		<ee:transform doc:name="set vars.user" doc:id="09edb510-059a-4037-bec1-0c33fb89d7f9" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="user" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	"email": payload.emailAdresse,
+	"firstName": payload.vorname,
+	"lastName" : payload.nachname,
+	"street" : payload."straße",
+	"city" : payload.Geburtsort,
+	"dob" : payload.Geburtstag
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
 	</sub-flow>
 </mule>
