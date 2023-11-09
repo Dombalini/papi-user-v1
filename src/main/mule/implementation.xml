@@ -15,22 +15,31 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 	<flow name="create-user" doc:id="8af9fd76-c19f-406b-bc2b-e62e6d27d9c4" >
 		<logger level="INFO" doc:name="Start Log" doc:id="f68fe589-d4a5-472f-8cf9-42d25165bae0" message="The create-user-flow has started"/>
 		<flow-ref doc:name="variables-SubFlow" doc:id="5ca684c0-2ea3-4068-8ff6-59ed25e28346" name="variables-SubFlow"/>
-		<http:request method="GET" doc:name="Request Users " doc:id="b3b50b5c-575d-48a4-93cd-a3e40122f22e" config-ref="HTTP_Request_configuration" path="/api/users">
+		<http:request method="GET" doc:name="Request Users " doc:id="bf31ee38-48fc-44d3-916a-e53fa1f32ebf" config-ref="HTTP_Request_configuration" path="/api/users">
+					<http:headers><![CDATA[#[output application/java
+---
+{
+	"client_secret" : "abcd",
+	"client_id" : "1234"
+}]]]></http:headers>
+				</http:request>
+		<set-variable value="#[payload.email]" doc:name="email" doc:id="0f4d0deb-23ac-4e2d-a3a6-4c9697de1bcb" variableName="email" />
+		<choice doc:name="Choice" doc:id="1a4b239e-37c5-4744-8a27-a45b91f2ef54" >
+			<when expression="#[output application/json&#10;---&#10;vars.email contains vars.User.email]">
+				<http:request method="GET" doc:name="Request Users " doc:id="b3b50b5c-575d-48a4-93cd-a3e40122f22e" config-ref="HTTP_Request_configuration" path="/api/users">
 			<http:headers><![CDATA[#[output application/java
 ---
 {
 	"client_secret" : "abcd",
 	"client_id" : "1234"
 }]]]></http:headers>
-			<http:query-params ><![CDATA[#[output application/java
+			<http:query-params><![CDATA[#[output application/java
 ---
 {
 	"email" : vars.user.email
 }]]]></http:query-params>
 		</http:request>
-		<set-variable value="#[payload.email]" doc:name="email" doc:id="7a773442-c0fd-4a3d-b983-2ae5748d37eb" variableName="email"/>
-		<choice doc:name="Choice" doc:id="1a4b239e-37c5-4744-8a27-a45b91f2ef54" >
-			<when expression="#[output application/json&#10;---&#10;vars.email contains vars.User.email]">
+				<set-variable value="#[payload.email]" doc:name="email" doc:id="7a773442-c0fd-4a3d-b983-2ae5748d37eb" variableName="email" />
 				<flow-ref doc:name="update-SubFlow" doc:id="107a7e1f-e8a5-4624-89bc-0c5865917713" name="update-SubFlow" />
 			</when>
 			<otherwise >
@@ -161,7 +170,7 @@ output application/java
 	"email": payload.emailAdresse,
 	"firstName": payload.vorname,
 	"lastName" : payload.nachname,
-	"street" : payload."straße",
+	"street" : payload."straße" as String,
 	"city" : payload.Geburtsort,
 	"dob" : payload.Geburtstag
 }]]></ee:set-variable>
