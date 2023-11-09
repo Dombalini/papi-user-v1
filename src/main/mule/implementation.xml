@@ -1,17 +1,19 @@
 <!-- [STUDIO:"Create or Update User"]<?xml version="1.0" encoding="UTF-8"?> [STUDIO] -->
 
-<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
-	xmlns:db="http://www.mulesoft.org/schema/mule/db"
-	xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
-http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
 	<validation:config name="Validation_Config" doc:name="Validation Config" doc:id="f4e1c847-878a-47f0-83c4-6130da3578e8" />
 	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP_Request_configuration" doc:id="1399923a-7838-489d-a45f-33c939304539" basePath="/sapi/sapidatabase/v1">
 		<http:request-connection host="localhost" port="8081" >
 		</http:request-connection>
 	</http:request-config>
+	<file:config name="clients" doc:name="File Config" doc:id="51e1efd5-65c2-4f02-8eef-2f7ce408eebf" />
 	<flow name="create-user" doc:id="8af9fd76-c19f-406b-bc2b-e62e6d27d9c4" >
 		<logger level="INFO" doc:name="Start Log" doc:id="f68fe589-d4a5-472f-8cf9-42d25165bae0" message="The create-user-flow has started"/>
 		<flow-ref doc:name="variables-SubFlow" doc:id="5ca684c0-2ea3-4068-8ff6-59ed25e28346" name="variables-SubFlow"/>
@@ -24,7 +26,7 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 }]]]></http:headers>
 				</http:request>
 		<set-variable value="#[payload.email]" doc:name="email" doc:id="0f4d0deb-23ac-4e2d-a3a6-4c9697de1bcb" variableName="email" />
-		<choice doc:name="Choice" doc:id="1a4b239e-37c5-4744-8a27-a45b91f2ef54" >
+		<choice doc:name="Update or Create" doc:id="1a4b239e-37c5-4744-8a27-a45b91f2ef54" >
 			<when expression="#[output application/json&#10;---&#10;vars.email contains vars.User.email]">
 				<http:request method="GET" doc:name="Request Users " doc:id="b3b50b5c-575d-48a4-93cd-a3e40122f22e" config-ref="HTTP_Request_configuration" path="/api/users">
 			<http:headers><![CDATA[#[output application/java
@@ -66,7 +68,7 @@ output application/json
 &#93;&#93;></ee:set-payload>
 			</ee:message>
 		</ee:transform> [STUDIO] -->
-		<http:request method="PUT" doc:name="Request " doc:id="e7c89b13-4ba6-4fff-a4c2-6fb0f50e3fbc" config-ref="HTTP_Request_configuration" path="/api/users/{id}">
+		<http:request method="PUT" doc:name="Request  Update " doc:id="e7c89b13-4ba6-4fff-a4c2-6fb0f50e3fbc" config-ref="HTTP_Request_configuration" path="/api/users/{id}">
 			<http:body ><![CDATA[#[output application/json
 ---
 {
@@ -124,7 +126,7 @@ output application/json
 &#93;&#93;></ee:set-payload>
 			</ee:message>
 		</ee:transform> [STUDIO] -->
-		<http:request method="POST" doc:name="Request" doc:id="20f38065-6a09-49c0-9d3f-2edde4d7f916" config-ref="HTTP_Request_configuration" path="/api/users">
+		<http:request method="POST" doc:name="Request Create" doc:id="20f38065-6a09-49c0-9d3f-2edde4d7f916" config-ref="HTTP_Request_configuration" path="/api/users">
 			<http:body ><![CDATA[#[output application/json
 ---
 {
@@ -177,4 +179,38 @@ output application/java
 			</ee:variables>
 		</ee:transform>
 	</sub-flow>
+	<flow name="implementationFlow" doc:id="3549da94-781b-48c9-89a8-292f87d415de" >
+		<scheduler doc:name="Scheduler every 5 minutes" doc:id="51074f99-a357-4953-be3d-9c791f0391da" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="15" timeUnit="SECONDS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<http:request method="GET" doc:name="Request Users " doc:id="f993be38-71a7-4bf4-9e61-7803a3a3b6de" config-ref="HTTP_Request_configuration" path="/api/users">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"client_secret" : "abcd",
+	"client_id" : "1234"
+}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Logger" doc:id="386a6299-ce9d-4247-aa7e-14e18915cf1d" message="#[payload]" />
+		<set-variable value="#[payload.updated_at]" doc:name="updated_at" doc:id="6d9047e7-1755-4830-91f4-8b449ce3e9fe" variableName="updated_at" />
+		<logger level="INFO" doc:name="Logger" doc:id="bd560f83-387a-44c7-9b89-165633d0cc5a" message="#[vars.updated_at]"/>
+		<ee:transform doc:name="update_at=last" doc:id="c03e9f0a-e1a1-48e2-8c2f-5cc066155944" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/csv header=false
+
+var timestamps = [vars.updated_at
+]
+
+var latestTimestamp = timestamps maxBy ((item) -> item)
+
+---
+latestTimestamp
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<file:write doc:name="last-user-logged-by-time" doc:id="97bbfc32-8b43-402d-8028-70c84284c274" config-ref="clients" path="C:\Users\DominikZovko\Desktop\user.csv" mode="APPEND"/>
+	</flow>
 </mule>
