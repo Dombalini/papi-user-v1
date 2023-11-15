@@ -1,4 +1,4 @@
-<!-- [STUDIO:"Create or Update User"]<?xml version="1.0" encoding="UTF-8"?> [STUDIO] -->
+<?xml version="1.0" encoding="UTF-8"?>
 
 <mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:os="http://www.mulesoft.org/schema/mule/os"
 	xmlns:file="http://www.mulesoft.org/schema/mule/file"
@@ -50,16 +50,8 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
 	"email" : vars.user.emailAdresse
 }]]]></http:query-params>
 		</http:request>
-				<flow-ref doc:name="update-SubFlow" doc:id="107a7e1f-e8a5-4624-89bc-0c5865917713" name="update-SubFlow" />
-			</when>
-			<otherwise >
-				<flow-ref doc:name="create-subFlow" doc:id="bd581d72-7b05-48af-b713-4857bd77f2ff" name="create-subFlow" />
-			</otherwise>
-		</choice>
-	</flow>
-	<sub-flow name="update-SubFlow" doc:id="f7192b0e-85e1-4ca3-a170-9542bcf38ebd" >
-		<http:request method="PUT" doc:name="Request  Update " doc:id="e7c89b13-4ba6-4fff-a4c2-6fb0f50e3fbc" config-ref="HTTP_Request_configuration" path="/api/users/{id}">
-			<http:body ><![CDATA[#[output application/json
+				<http:request method="PUT" doc:name="Request  Update " doc:id="909e2bb2-640e-4282-84b6-0fbd0a024d36" config-ref="HTTP_Request_configuration" path="/api/users/{id}" >
+					<http:body ><![CDATA[#[output application/json
 ---
 {
 	"email" : vars.user.emailAdresse,
@@ -74,34 +66,32 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
 	"updated_at": "2023-10-10T21:30:00.000Z",
 	"initials": "JD"
 }]]]></http:body>
-			<http:headers ><![CDATA[#[output application/java
+					<http:headers ><![CDATA[#[output application/java
 ---
 {
 	"client_secret" : "abcd",
 	"client_id" : "1234"
 }]]]></http:headers>
-			<http:uri-params ><![CDATA[#[output application/java
+					<http:uri-params ><![CDATA[#[output application/java
 ---
 {
 	"id" : payload.id[0]
 }]]]></http:uri-params>
-		</http:request>
-		<ee:transform doc:name="output Payload" doc:id="d5b73dd1-27c8-4661-8989-ac04da8cd097" >
-			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
+				</http:request>
+				<ee:transform doc:name="output Payload" doc:id="03e5ee76-4c27-40d4-902e-f98a42dbfbf7" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
 {
 	"message" : "User was updated"
 }]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
-	
-	</sub-flow>
-	<sub-flow name="create-subFlow" doc:id="9dd37812-ebaf-4198-907d-e96ed7603c4c" >
-
-		<http:request method="POST" doc:name="Request Create" doc:id="20f38065-6a09-49c0-9d3f-2edde4d7f916" config-ref="HTTP_Request_configuration" path="/api/users">
-			<http:body ><![CDATA[#[output application/json
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<http:request method="POST" doc:name="Request  Create" doc:id="58b3e52f-6fc5-4530-8c06-462a695f1e7d" config-ref="HTTP_Request_configuration" path="/api/users" >
+					<http:body ><![CDATA[#[output application/json
 ---
 {
 	"email" : vars.user.emailAdresse,
@@ -116,32 +106,37 @@ output application/json
 	"updated_at": "2023-10-10T21:30:00.000Z",
 	"initials": "JD"
 }]]]></http:body>
-			<http:headers ><![CDATA[#[output application/java
+					<http:headers ><![CDATA[#[output application/java
 ---
 {
 	"client_secret" : "abcd",
 	"client_id" : "1234"
 }]]]></http:headers>
-		</http:request>
-		<ee:transform doc:name="output Payload" doc:id="3b9158f7-1543-4e75-9fec-42ce962eb61b" >
-			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
+				</http:request>
+				<ee:transform doc:name="output Payload" doc:id="ed7efce5-2291-4e09-97a3-c4945c828f7e" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
 {
 	"message" : "User was created"
 }]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
-		
-	</sub-flow>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
 	<flow name="retrive-users-and-write-to-csv" doc:id="a62e5c46-493c-46c8-847c-9440e3f2fb4b" >
-    <scheduler doc:name="Scheduler every 5 minutes" doc:id="1c975297-6ea7-46a8-beb9-e0546a4fa924" >
-        <scheduling-strategy >
-            <fixed-frequency frequency="20" timeUnit="SECONDS"/>
-        </scheduling-strategy>
-    </scheduler>
-    <set-variable value="#[now()]" doc:name="lastTriggerTime" doc:id="20e4077d-2371-4a27-a2f5-74f664343a23" variableName="lastTriggerTime"/>
+		<scheduler doc:name="Trigger every 5 minutes" doc:id="e71fedbd-ae38-43bb-94cf-6b51762c12a7" >
+			<scheduling-strategy >
+				<cron expression="${cron.expression}" timeZone="${cron.time_zone}" />
+			
+</scheduling-strategy>
+		</scheduler>
+		<os:retrieve doc:name="Retrieve user with update_at" doc:id="f1332c47-2ceb-43fc-b83f-3b4cfdaaa206" objectStore="stored_users" key="updated_at">
+			<os:default-value ><![CDATA[#["1970-01-01T00:00:00"]]]></os:default-value>
+		</os:retrieve>
+		<set-variable value="#[now()]" doc:name="lastTriggerTime" doc:id="20e4077d-2371-4a27-a2f5-74f664343a23" variableName="lastTriggerTime"/>
 		<http:request method="GET" doc:name="Request Users " doc:id="60ca4cfa-ca71-4528-ae64-1c2ff3813860" config-ref="HTTP_Request_configuration" path="/api/users">
 			<http:headers><![CDATA[#[output application/java
 ---
@@ -150,7 +145,7 @@ output application/json
 	"client_id" : "1234"
 }]]]></http:headers>
 		</http:request>
-		<ee:transform doc:name="filteredUsers" doc:id="11af7f92-b97c-4286-a570-438428f1f9a4" >
+		<ee:transform doc:name="filtered Users from DB" doc:id="11af7f92-b97c-4286-a570-438428f1f9a4" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[output application/json
 ---
@@ -172,34 +167,36 @@ output application/json
 ]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<os:store doc:name="Store user" doc:id="54a16cf9-68f1-4ae6-96ab-44e0e32c7869" key="user" objectStore="stored_users" />
-    <os:retrieve-all doc:name="Retrieve all users" doc:id="c3b8f77d-f090-4041-9071-0bc20a8b77ab" objectStore="stored_users"/>
-    <ee:transform doc:name="output to CSV" doc:id="3d378362-087e-4d61-9293-c34fa5c0f886" >
-			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
-output application/csv
+		<file:write doc:name="Write-users-to-csv" doc:id="353158a5-a341-4e48-96a1-b4d18c5df477" config-ref="clients" path="C:\Users\DominikZovko\Desktop\user.csv">
+			<file:content ><![CDATA[#[%dw 2.0
+output application/csv quoteValues=true
 ---
-if (payload.users is Array)
-    payload.users
-else
-    [payload.users] map (user) ->
-        {
-            "id": user.id,
-            "email": user.email,
-            "firstName": user.firstName,
-            "lastName": user.lastName,
-            "manager_id": user.manager_id,
-            "street": user.street,
-            "city": user.city,
-            "dob": user.dob,
-            "updated_at": user.updated_at,
-            "initials": user.initials
-        }
-]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
-		<file:write doc:name="write-users" doc:id="353158a5-a341-4e48-96a1-b4d18c5df477" config-ref="clients" path="C:\Users\DominikZovko\Desktop\user.csv" mode="APPEND">
+payload.filteredUsers map (user) ->
+{
+    "id": user.id,
+    "email": user.email,
+    "firstName": user.firstName,
+    "lastName": user.lastName,
+    "manager_id": user.manager_id,
+    "street": user.street,
+    "city": user.city,
+    "dob": user.dob,
+    "updated_at": user.updated_at,
+    "initials": user.initials
+}]]]></file:content>
+
     </file:write>
+		<os:store doc:name="Store user with update_at" doc:id="54a16cf9-68f1-4ae6-96ab-44e0e32c7869" key="updated_at" objectStore="stored_users" >
+			<os:value ><![CDATA[#[%dw 2.0
+output application/json
+---
+payload.filteredUsers map (user) ->
+{
+    "updated_at": {
+        dateTime: user.updated_at as LocalDateTime {format: "yyyy-MM-dd'T'HH:mm:ss"}
+    }
+}]]]></os:value>
+		</os:store>
 
 </flow>
 
