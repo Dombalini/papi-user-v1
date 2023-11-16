@@ -121,14 +121,7 @@ output application/json
         </error-handler>
     </flow>
     <flow name="post:\user:application\json:papi-users-config">
-        <!-- [STUDIO:"Transform Message"]        <ee:transform doc:name="Transform Message">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
-&#45;&#45;-
-"User was created"&#93;&#93;></ee:set-payload>
-            </ee:message>
-        </ee:transform> [STUDIO] -->
+      
         <flow-ref doc:name="create-user" doc:id="f00f1b70-156d-4a78-9ee3-358d739fbe9f" name="create-user" />
     </flow>
 </mule>

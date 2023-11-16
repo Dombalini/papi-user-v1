@@ -205,9 +205,9 @@
 			<classifier>mule-plugin</classifier>
 		</dependency>
 		<dependency>
-			<groupId>88bb2e83-466d-40cf-9fdb-5a69ff6fe8fb</groupId>
-			<artifactId>sapi-db</artifactId>
-			<version>1.0.0</version>
+			<groupId>115c39c2-b285-45ab-a930-0148acd0cf51</groupId>
+			<artifactId>papi-users</artifactId>
+			<version>1.0.5</version>
 			<classifier>raml</classifier>
 			<type>zip</type>
 		</dependency>
