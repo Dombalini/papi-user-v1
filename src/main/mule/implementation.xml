@@ -19,7 +19,6 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
 
 	<os:object-store name="stored_users" doc:name="Object store" doc:id="4eca8b09-e766-4317-9aaf-b61a3820c71b" expirationInterval="5"/>
 	<flow name="create-user" doc:id="8af9fd76-c19f-406b-bc2b-e62e6d27d9c4" >
-		<logger level="INFO" doc:name="Start Log" doc:id="f68fe589-d4a5-472f-8cf9-42d25165bae0" message="The create-user-flow has started"/>
 		<set-variable value="#[payload]" doc:name="user" doc:id="9f207a32-1def-4185-87af-0ae0e70eb7cd" variableName="user" />
 		<http:request method="GET" doc:name="Request Users " doc:id="bf31ee38-48fc-44d3-916a-e53fa1f32ebf" config-ref="HTTP_Request_configuration" path="/api/users">
 					<http:headers><![CDATA[#[output application/java
@@ -36,7 +35,7 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
 				</http:request>
 		<set-variable value="#[payload.manager_id]" doc:name="manager_id_all" doc:id="0f4d0deb-23ac-4e2d-a3a6-4c9697de1bcb" variableName="manager_id_all" />
 		<choice doc:name="Update or Create" doc:id="1a4b239e-37c5-4744-8a27-a45b91f2ef54" >
-			<when expression="#[output application/json&#10;---&#10; payload.email contains vars.user.emailAdresse]">
+			<when expression="#[output application/json&#10;---&#10;(payload.manager_id == null) or (payload.email contains vars.user.emailAdresse)]">
 				<http:request method="GET" doc:name="Request Users " doc:id="b3b50b5c-575d-48a4-93cd-a3e40122f22e" config-ref="HTTP_Request_configuration" path="/api/users">
 			<http:headers><![CDATA[#[output application/java
 ---
