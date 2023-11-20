@@ -132,10 +132,9 @@ output application/json
 			
 </scheduling-strategy>
 		</scheduler>
-		<os:retrieve doc:name="Retrieve user with update_at" doc:id="f1332c47-2ceb-43fc-b83f-3b4cfdaaa206" objectStore="stored_users" key="updated_at">
+		<os:retrieve doc:name="Retrieve user with update_at" doc:id="f1332c47-2ceb-43fc-b83f-3b4cfdaaa206" objectStore="stored_users" key="updated_at" target="updated_at">
 			<os:default-value ><![CDATA[#["1970-01-01T00:00:00"]]]></os:default-value>
 		</os:retrieve>
-		<set-variable value="#[now()]" doc:name="lastTriggerTime" doc:id="20e4077d-2371-4a27-a2f5-74f664343a23" variableName="lastTriggerTime"/>
 		<http:request method="GET" doc:name="Request Users " doc:id="60ca4cfa-ca71-4528-ae64-1c2ff3813860" config-ref="HTTP_Request_configuration" path="/api/users">
 			<http:headers><![CDATA[#[output application/java
 ---
@@ -149,7 +148,7 @@ output application/json
 				<ee:set-payload ><![CDATA[output application/json
 ---
 {
-    "filteredUsers": (payload filter (user) -> user.updated_at >= vars.lastTriggerTime) map (user) ->
+    "filteredUsers": (payload filter (user) -> user.updated_at >= vars.updated_at) map (user) ->
     {
         "id": user.id,
         "email": user.email,
@@ -189,12 +188,7 @@ payload.filteredUsers map (user) ->
 			<os:value ><![CDATA[#[%dw 2.0
 output application/json
 ---
-payload.filteredUsers map (user) ->
-{
-    "updated_at": {
-        dateTime: user.updated_at as LocalDateTime {format: "yyyy-MM-dd'T'HH:mm:ss"}
-    }
-}]]]></os:value>
+now() as LocalDateTime {format: "yyyy-MM-dd'T'HH:mm:ss"}]]]></os:value>
 		</os:store>
 
 </flow>
