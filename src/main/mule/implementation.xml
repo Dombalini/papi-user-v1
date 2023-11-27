@@ -20,8 +20,14 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
 	<os:object-store name="stored_users" doc:name="Object store" doc:id="4eca8b09-e766-4317-9aaf-b61a3820c71b" expirationInterval="5"/>
 	<flow name="create-user" doc:id="8af9fd76-c19f-406b-bc2b-e62e6d27d9c4" >
 		<set-variable value="#[payload]" doc:name="user" doc:id="9f207a32-1def-4185-87af-0ae0e70eb7cd" variableName="user" />
-		<try doc:name="Try" doc:id="298f799a-ee9a-4df7-ab6a-f523a428daf8" >
-			<http:request method="GET" doc:name="request users by queryParam email" doc:id="bf31ee38-48fc-44d3-916a-e53fa1f32ebf" config-ref="HTTP_Request_configuration" path="/api/users">
+<!-- [STUDIO:"Try"]		<try doc:name="Try" doc:id="298f799a-ee9a-4df7-ab6a-f523a428daf8">
+			<error-handler>
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="c3f0fd3b-0c06-4c22-bef1-24f1274026cd" type="HTTP:NOT_FOUND">
+					<set-variable value="#[1&#93;" doc:name="error" doc:id="3f376d2c-8c6e-423b-8ee9-48f72fc436fb" variableName="error" />
+				</on-error-continue>
+			</error-handler>
+		</try> [STUDIO] -->
+		<http:request method="GET" doc:name="request users by queryParam email" doc:id="bf31ee38-48fc-44d3-916a-e53fa1f32ebf" config-ref="HTTP_Request_configuration" path="/api/users">
 					<http:headers><![CDATA[#[output application/java
 ---
 {
@@ -34,15 +40,9 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
 	"email" : payload.emailAdresse
 }]]]></http:query-params>
 				</http:request>
-			<error-handler >
-				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="c3f0fd3b-0c06-4c22-bef1-24f1274026cd" type="DB:QUERY_EXECUTION">
-					<set-variable value="#[1]" doc:name="error" doc:id="3f376d2c-8c6e-423b-8ee9-48f72fc436fb" variableName="error"/>
-				</on-error-continue>
-			</error-handler>
-		</try>
 		<set-variable value="#[payload.manager_id]" doc:name="manager_id" doc:id="dd6efcde-ade5-4aae-8587-9103185f211b" variableName="manager_id"/>
 		<choice doc:name="Update or Create" doc:id="1a4b239e-37c5-4744-8a27-a45b91f2ef54" >
-			<when expression='#[output application/json&#10;---&#10;(vars.error == null) or (vars.manager_id == 0)]'>
+			<when expression='#[output application/json&#10;---&#10;(payload.email = vars.user.emailAdresse) or (vars.manager_id == 0)]'>
 				<ee:transform doc:name="prepare Payload" doc:id="6ac7ca4f-c9a9-4922-9641-593892a47ce4">
 					<ee:message>
 						<ee:set-payload><![CDATA[%dw 2.0
@@ -144,74 +144,7 @@ output application/json
 			</otherwise>
 		</choice>
 	</flow>
-	<flow name="retrive-users-and-write-to-csv" doc:id="a62e5c46-493c-46c8-847c-9440e3f2fb4b" >
-		<scheduler doc:name="trigger every 5 minutes" doc:id="e71fedbd-ae38-43bb-94cf-6b51762c12a7" >
-			<scheduling-strategy >
-				<cron expression="${cron.expression}" timeZone="${cron.time_zone}" />
-			
-</scheduling-strategy>
-		</scheduler>
-		<os:retrieve doc:name="retrieve user with update_at" doc:id="f1332c47-2ceb-43fc-b83f-3b4cfdaaa206" objectStore="stored_users" key="updated_at" target="updated_at">
-			<os:default-value ><![CDATA[#["1970-01-01T00:00:00"]]]></os:default-value>
-		</os:retrieve>
-		<http:request method="GET" doc:name="request users " doc:id="60ca4cfa-ca71-4528-ae64-1c2ff3813860" config-ref="HTTP_Request_configuration" path="/api/users">
-			<http:headers><![CDATA[#[output application/java
----
-{
-	"client_secret" : "abcd",
-	"client_id" : "1234"
-}]]]></http:headers>
-		</http:request>
-		<ee:transform doc:name="filter Users" doc:id="11af7f92-b97c-4286-a570-438428f1f9a4" >
-			<ee:message >
-				<ee:set-payload ><![CDATA[output application/json
----
-{
-    "filteredUsers": (payload filter (user) -> user.updated_at >= vars.updated_at) map (user) ->
-    {
-        "id": user.id,
-        "email": user.email,
-        "firstName": user.firstName,
-        "lastName": user.lastName,
-        "manager_id": user.manager_id,
-        "street": user.street,
-        "city": user.city,
-        "dob": user.dob,
-        "updated_at": user.updated_at,
-        "initials": user.initials
-   }
-   }
-]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
-		<file:write doc:name="write-users-to-csv" doc:id="353158a5-a341-4e48-96a1-b4d18c5df477" config-ref="clients" path="C:\Users\DominikZovko\Desktop\user.csv">
-			<file:content ><![CDATA[#[%dw 2.0
-output application/csv quoteValues=true
----
-payload.filteredUsers map (user) ->
-{
-    "id": user.id,
-    "email": user.email,
-    "firstName": user.firstName,
-    "lastName": user.lastName,
-    "manager_id": user.manager_id,
-    "street": user.street,
-    "city": user.city,
-    "dob": user.dob,
-    "updated_at": user.updated_at,
-    "initials": user.initials
-}]]]></file:content>
-
-    </file:write>
-		<os:store doc:name="store user with update_at" doc:id="54a16cf9-68f1-4ae6-96ab-44e0e32c7869" key="updated_at" objectStore="stored_users" >
-			<os:value ><![CDATA[#[%dw 2.0
-output application/json
----
-now() as LocalDateTime {format: "yyyy-MM-dd'T'HH:mm:ss"}]]]></os:value>
-		</os:store>
-
-</flow>
-<!-- [STUDIO:"create-user1"]	<flow name="create-user1" doc:id="8a84f162-f5be-42b6-8761-c11ceee86884" >
+<!-- [STUDIO:"create-user"]	<flow name="create-user" doc:id="8a84f162-f5be-42b6-8761-c11ceee86884" >
 		<set-variable value="#[payload&#93;" doc:name="user" doc:id="339661ec-2af8-4303-92d7-e5f9082e64b5" variableName="user" />
 		<http:request method="GET" doc:name="Request Users " doc:id="86dc5917-7fbb-4836-8ebe-c3422c502bf6" config-ref="HTTP_Request_configuration" path="/api/users" >
 			<http:headers ><![CDATA[#[output application/java
@@ -325,6 +258,15 @@ output application/json
 		</choice>
 	</flow> [STUDIO] -->
 <!-- [STUDIO:"create-user"]	<sub-flow name="create-user" doc:id="f394690f-fbf1-4e0d-86e5-3e7fdb94b5be" >
+		<ee:transform doc:name="If the user is Created in try block then how can i not create it again ?" doc:id="997bf8d0-eea3-46c5-9251-e8f3b2e7c91e">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+&#45;&#45;-
+{
+}&#93;&#93;></ee:set-payload>
+			</ee:message>
+		</ee:transform>
 		<set-variable value="#[payload&#93;" doc:name="user" doc:id="8ebac0de-62d8-4707-a4bd-733d711f5e7b" variableName="user" />
 		<try doc:name="Try" doc:id="e7cdf937-8f4f-4d42-ab32-3dc8c693847b" >
 			<http:request method="POST" doc:name="Request  Create" doc:id="6da82ae6-3618-40ee-a90a-b9a9dd68f613" config-ref="HTTP_Request_configuration" path="/api/users">
@@ -351,7 +293,7 @@ output application/json
 }&#93;&#93;&#93;></http:headers>
 		</http:request>
 			<error-handler >
-				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="055cb21c-2ad6-465b-bc88-1235606c75dc" type="MULE:ANY" >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="055cb21c-2ad6-465b-bc88-1235606c75dc" type="ANY" >
 					<set-variable value="#[1&#93;" doc:name="error" doc:id="07ff6151-ee87-4ed0-b4a0-e5b02bfd8a48" variableName="error" />
 				</on-error-continue>
 			</error-handler>
@@ -389,7 +331,7 @@ output application/json
 			</ee:message>
 		</ee:transform>
 		<choice doc:name="Choice" doc:id="ffa8d118-9393-4775-924a-52e063d1a15e" >
-			<when expression="#[output application/json&#10;&#45;&#45;-&#10;(payload.manager_id == null)&#93;">
+			<when expression="#[output application/json&#10;&#45;&#45;-&#10;(payload.manager_id != null) or (id !=null)&#93;">
 								<ee:transform doc:name="prepare Payload" doc:id="aee0fbe8-3f6d-4324-bcf2-bcd3957b281e">
 					<ee:message>
 						<ee:set-payload><![CDATA[%dw 2.0
@@ -511,5 +453,72 @@ output application/json
 			</otherwise>
 		</choice>
 	</sub-flow> [STUDIO] -->
+	<flow name="retrive-users-and-write-to-csv" doc:id="a62e5c46-493c-46c8-847c-9440e3f2fb4b">
+		<scheduler doc:name="trigger every 5 minutes" doc:id="e71fedbd-ae38-43bb-94cf-6b51762c12a7">
+			<scheduling-strategy>
+				<cron expression="${cron.expression}" timeZone="${cron.time_zone}" />
+			
+</scheduling-strategy>
+		</scheduler>
+		<os:retrieve doc:name="retrieve user with update_at" doc:id="f1332c47-2ceb-43fc-b83f-3b4cfdaaa206" objectStore="stored_users" key="updated_at" target="updated_at">
+			<os:default-value><![CDATA[#["1970-01-01T00:00:00"]]]></os:default-value>
+		</os:retrieve>
+		<http:request method="GET" doc:name="request users " doc:id="60ca4cfa-ca71-4528-ae64-1c2ff3813860" config-ref="HTTP_Request_configuration" path="/api/users">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"client_secret" : "abcd",
+	"client_id" : "1234"
+}]]]></http:headers>
+		</http:request>
+		<ee:transform doc:name="filter Users" doc:id="11af7f92-b97c-4286-a570-438428f1f9a4">
+			<ee:message>
+				<ee:set-payload><![CDATA[output application/json
+---
+{
+    "filteredUsers": (payload filter (user) -> user.updated_at >= vars.updated_at) map (user) ->
+    {
+        "id": user.id,
+        "email": user.email,
+        "firstName": user.firstName,
+        "lastName": user.lastName,
+        "manager_id": user.manager_id,
+        "street": user.street,
+        "city": user.city,
+        "dob": user.dob,
+        "updated_at": user.updated_at,
+        "initials": user.initials
+   }
+   }
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<file:write doc:name="write-users-to-csv" doc:id="353158a5-a341-4e48-96a1-b4d18c5df477" config-ref="clients" path="C:\Users\DominikZovko\Desktop\user.csv">
+			<file:content><![CDATA[#[%dw 2.0
+output application/csv quoteValues=true
+---
+payload.filteredUsers map (user) ->
+{
+    "id": user.id,
+    "email": user.email,
+    "firstName": user.firstName,
+    "lastName": user.lastName,
+    "manager_id": user.manager_id,
+    "street": user.street,
+    "city": user.city,
+    "dob": user.dob,
+    "updated_at": user.updated_at,
+    "initials": user.initials
+}]]]></file:content>
+
+    </file:write>
+		<os:store doc:name="store user with update_at" doc:id="54a16cf9-68f1-4ae6-96ab-44e0e32c7869" key="updated_at" objectStore="stored_users">
+			<os:value><![CDATA[#[%dw 2.0
+output application/json
+---
+now() as LocalDateTime {format: "yyyy-MM-dd'T'HH:mm:ss"}]]]></os:value>
+		</os:store>
+
+</flow>
 
 </mule>
