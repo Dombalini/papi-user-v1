@@ -20,21 +20,14 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
 	<os:object-store name="stored_users" doc:name="Object store" doc:id="4eca8b09-e766-4317-9aaf-b61a3820c71b" expirationInterval="5"/>
 	<flow name="create-user" doc:id="8af9fd76-c19f-406b-bc2b-e62e6d27d9c4" >
 		<set-variable value="#[payload]" doc:name="user" doc:id="9f207a32-1def-4185-87af-0ae0e70eb7cd" variableName="user" />
-<!-- [STUDIO:"Try"]		<try doc:name="Try" doc:id="298f799a-ee9a-4df7-ab6a-f523a428daf8">
-			<error-handler>
-				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="c3f0fd3b-0c06-4c22-bef1-24f1274026cd" type="HTTP:NOT_FOUND">
-					<set-variable value="#[1&#93;" doc:name="error" doc:id="3f376d2c-8c6e-423b-8ee9-48f72fc436fb" variableName="error" />
-				</on-error-continue>
-			</error-handler>
-		</try> [STUDIO] -->
-		<http:request method="GET" doc:name="request users by queryParam email" doc:id="bf31ee38-48fc-44d3-916a-e53fa1f32ebf" config-ref="HTTP_Request_configuration" path="/api/users">
+ 		<http:request method="GET" doc:name="request users by queryParam email" doc:id="bf31ee38-48fc-44d3-916a-e53fa1f32ebf" config-ref="HTTP_Request_configuration" path="/api/users" sendCorrelationId="ALWAYS" correlationId='#["papi"]'>
 					<http:headers><![CDATA[#[output application/java
 ---
 {
 	"client_secret" : "abcd",
-	"client_id" : "1234"
+	"client_id" : "123"
 }]]]></http:headers>
-			<http:query-params><![CDATA[#[output application/java
+			<http:query-params ><![CDATA[#[output application/java
 ---
 {
 	"email" : payload.emailAdresse
@@ -42,7 +35,7 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
 				</http:request>
 		<set-variable value="#[payload.manager_id]" doc:name="manager_id" doc:id="dd6efcde-ade5-4aae-8587-9103185f211b" variableName="manager_id"/>
 		<choice doc:name="Update or Create" doc:id="1a4b239e-37c5-4744-8a27-a45b91f2ef54" >
-			<when expression='#[output application/json&#10;---&#10;(payload.email = vars.user.emailAdresse) or (vars.manager_id == 0)]'>
+			<when expression='#[output application/json&#10;---&#10;(payload.email == vars.user.emailAdresse) or (vars.manager_id == 0)]'>
 				<ee:transform doc:name="prepare Payload" doc:id="6ac7ca4f-c9a9-4922-9641-593892a47ce4">
 					<ee:message>
 						<ee:set-payload><![CDATA[%dw 2.0
@@ -143,7 +136,8 @@ output application/json
 				</ee:transform>
 			</otherwise>
 		</choice>
-	</flow>
+	
+</flow>
 <!-- [STUDIO:"create-user"]	<flow name="create-user" doc:id="8a84f162-f5be-42b6-8761-c11ceee86884" >
 		<set-variable value="#[payload&#93;" doc:name="user" doc:id="339661ec-2af8-4303-92d7-e5f9082e64b5" variableName="user" />
 		<http:request method="GET" doc:name="Request Users " doc:id="86dc5917-7fbb-4836-8ebe-c3422c502bf6" config-ref="HTTP_Request_configuration" path="/api/users" >
@@ -262,7 +256,7 @@ output application/json
 			<ee:message>
 				<ee:set-payload><![CDATA[%dw 2.0
 output application/java
-&#45;&#45;-
+-&#45;&#45;
 {
 }&#93;&#93;></ee:set-payload>
 			</ee:message>
@@ -271,7 +265,7 @@ output application/java
 		<try doc:name="Try" doc:id="e7cdf937-8f4f-4d42-ab32-3dc8c693847b" >
 			<http:request method="POST" doc:name="Request  Create" doc:id="6da82ae6-3618-40ee-a90a-b9a9dd68f613" config-ref="HTTP_Request_configuration" path="/api/users">
 			<http:body><![CDATA[#[output application/json
-&#45;&#45;-
+-&#45;&#45;
 {
 	"email" : vars.user.emailAdresse,
 	"firstName": vars.user.vorname,
@@ -286,7 +280,7 @@ output application/java
 	"initials": "JD"
 }&#93;&#93;&#93;></http:body>
 			<http:headers><![CDATA[#[output application/java
-&#45;&#45;-
+-&#45;&#45;
 {
 	"client_secret" : "abcd",
 	"client_id" : "1234"
@@ -300,13 +294,13 @@ output application/java
 		</try>
 		<http:request method="GET" doc:name="Request Users " doc:id="f6bef080-4214-498c-ad89-f1c290bc58ed" config-ref="HTTP_Request_configuration" path="/api/users" >
 			<http:headers ><![CDATA[#[output application/java
-&#45;&#45;-
+-&#45;&#45;
 {
 	"client_secret" : "abcd",
 	"client_id" : "1234"
 }&#93;&#93;&#93;></http:headers>
 			<http:query-params ><![CDATA[#[output application/java
-&#45;&#45;-
+-&#45;&#45;
 {
 	"manager_id" : payload.manager_id
 }&#93;&#93;&#93;></http:query-params>
@@ -314,7 +308,7 @@ output application/java
 		<ee:transform doc:name="filter Payload" doc:id="f0d83689-42e2-42d3-9fa6-ab544d34aaa4">
 			<ee:message>
 				<ee:set-payload><![CDATA[output application/json
-&#45;&#45;-
+-&#45;&#45;
    (payload filter (payload) -> payload.email contains vars.user.emailAdresse) map (user) ->
     {
         "id": user.id,
@@ -331,12 +325,12 @@ output application/java
 			</ee:message>
 		</ee:transform>
 		<choice doc:name="Choice" doc:id="ffa8d118-9393-4775-924a-52e063d1a15e" >
-			<when expression="#[output application/json&#10;&#45;&#45;-&#10;(payload.manager_id != null) or (id !=null)&#93;">
+			<when expression="#[output application/json&#10;-&#45;&#45;&#10;(payload.manager_id != null) or (id !=null)&#93;">
 								<ee:transform doc:name="prepare Payload" doc:id="aee0fbe8-3f6d-4324-bcf2-bcd3957b281e">
 					<ee:message>
 						<ee:set-payload><![CDATA[%dw 2.0
 output application/json
-&#45;&#45;-
+-&#45;&#45;
 payload map ((item) -> {
     "id": item.id,
     "email": item.email,
@@ -354,7 +348,7 @@ payload map ((item) -> {
 				</ee:transform>
 				<http:request method="PUT" doc:name="Request  Update " doc:id="aa61647c-d21f-4730-b8a0-658561448882" config-ref="HTTP_Request_configuration" path="/api/users/{id}" >
 					<http:body ><![CDATA[#[output application/json
-&#45;&#45;-
+-&#45;&#45;
 {
 	"email" : vars.user.emailAdresse,
 	"firstName": vars.user.vorname,
@@ -369,18 +363,18 @@ payload map ((item) -> {
 	"initials": "JD"
 }&#93;&#93;&#93;></http:body>
 					<http:headers ><![CDATA[#[output application/java
-&#45;&#45;-
+-&#45;&#45;
 {
 	"client_secret" : "abcd",
 	"client_id" : "1234"
 }&#93;&#93;&#93;></http:headers>
 					<http:uri-params ><![CDATA[#[output application/java
-&#45;&#45;-
+-&#45;&#45;
 {
 	"id" : payload.id[0&#93;
 }&#93;&#93;&#93;></http:uri-params>
 					<http:query-params ><![CDATA[#[output application/java
-&#45;&#45;-
+-&#45;&#45;
 {
 	"email" : payload.email[0&#93;
 }&#93;&#93;&#93;></http:query-params>
@@ -389,7 +383,7 @@ payload map ((item) -> {
 					<ee:message>
 						<ee:set-payload><![CDATA[%dw 2.0
 output application/json
-&#45;&#45;-
+-&#45;&#45;
 {
 	"message" : "User was updated"
 }&#93;&#93;></ee:set-payload>
@@ -401,7 +395,7 @@ output application/json
 					<ee:message>
 						<ee:set-payload><![CDATA[%dw 2.0
 output application/json
-&#45;&#45;-
+-&#45;&#45;
 payload map ((item) -> {
     "id": item.id,
     "email": item.email,
@@ -419,7 +413,7 @@ payload map ((item) -> {
 				</ee:transform>
 				<http:request method="POST" doc:name="Request  Create" doc:id="2697541c-efad-4fa5-b766-b94990a47e64" config-ref="HTTP_Request_configuration" path="/api/users" >
 					<http:body ><![CDATA[#[output application/json
-&#45;&#45;-
+-&#45;&#45;
 {
 	"email" : vars.user.emailAdresse,
 	"firstName": vars.user.vorname,
@@ -434,7 +428,7 @@ payload map ((item) -> {
 	"initials": "JD"
 }&#93;&#93;&#93;></http:body>
 					<http:headers ><![CDATA[#[output application/java
-&#45;&#45;-
+-&#45;&#45;
 {
 	"client_secret" : "abcd",
 	"client_id" : "1234"
@@ -444,7 +438,7 @@ payload map ((item) -> {
 					<ee:message >
 						<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
-&#45;&#45;-
+-&#45;&#45;
 {
 	"message" : "User was created"
 }&#93;&#93;></ee:set-payload>
