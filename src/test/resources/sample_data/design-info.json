@@ -12,6 +12,9 @@
     },
     "54a16cf9-68f1-4ae6-96ab-44e0e32c7869": {
       "payload": "sample_data/csv.csv"
+    },
+    "6ac7ca4f-c9a9-4922-9641-593892a47ce4": {
+      "vars-user": "sample_data/defaultstringtype.json"
     }
   }
 }
